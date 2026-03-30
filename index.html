@@ -151,9 +151,10 @@
                 
                 <h2 class="text-3xl font-extraBold text-center text-[#2d5a27] mb-8 relative z-10">قدم طلبك الآن (الكمية محدودة ⏳)</h2>
                 
-                <form action="https://formsubmit.co/loloholo915@gmail.com" method="POST" class="space-y-6 relative z-10">
-                    
-                    <input type="hidden" name="_subject" value="New Order! لعبة الأفوكادو السحرية للقطط">
+                <form id="orderForm" action="https://formsubmit.co/loloholo915@gmail.com" method="POST" class="space-y-6 relative z-10">
+                    <!-- FormSubmit Configuration -->
+                    <input type="hidden" name="_subject" value="طلب جديد! لعبة الأفوكادو السحرية">
+                    <input type="hidden" name="_template" value="table">
                     <input type="hidden" name="_captcha" value="false">
                     
                     <div>
@@ -252,7 +253,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-[#8fb935] hover:bg-[#2d5a27] text-white font-extrabold py-5 rounded-2xl shadow-xl text-2xl transition duration-300 transform active:scale-95 btn-pulse">
+                    <button type="submit" id="submitBtn" class="w-full bg-[#8fb935] hover:bg-[#2d5a27] text-white font-extrabold py-5 rounded-2xl shadow-xl text-2xl transition duration-300 transform active:scale-95 btn-pulse">
                         تأكيد الطلب
                     </button>
                     <p class="text-center text-lg text-gray-600 mt-4 flex items-center justify-center gap-2">
@@ -288,6 +289,59 @@
             duration: 800,
             once: true,
             offset: 100
+        });
+
+        // WhatsApp Integration Logic
+        const orderForm = document.getElementById('orderForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        orderForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="flex items-center justify-center gap-2"><svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> جاري إرسال طلبك...</span>';
+
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                // 1. Submit to FormSubmit (Email)
+                await fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                // 2. Format WhatsApp Message
+                const message = `*طلب جديد لبضاعة الأفوكادو* 🥑🐾\n\n` +
+                                `👤 *الاسم:* ${data.Customer_Name}\n` +
+                                `📞 *الهاتف:* ${data.Phone_Number}\n` +
+                                `📍 *الولاية:* ${data.Wilaya}\n` +
+                                `🏠 *العنوان:* ${data.Address}\n` +
+                                `🚚 *طريقة التوصيل:* ${data.Delivery_Method === 'Home Delivery' ? 'توصيل للمنزل' : 'توصيل لمكتب الشحن'}\n\n` +
+                                `✅ *يرجى تأكيد الطلب للبدء في الشحن.*`;
+
+                const encodedMessage = encodeURIComponent(message);
+                const whatsappUrl = `https://wa.me/213554818271?text=${encodedMessage}`;
+
+                // 3. Success Feedback & Redirect
+                submitBtn.innerHTML = '✅ تم إرسال الطلب بنجاح!';
+                submitBtn.classList.remove('bg-[#8fb935]', 'hover:bg-[#2d5a27]');
+                submitBtn.classList.add('bg-green-600');
+
+                setTimeout(() => {
+                    window.location.href = whatsappUrl;
+                }, 1500);
+
+            } catch (error) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                alert('عذراً، حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى أو الاتصال بنا مباشرة.');
+            }
         });
 
         // Smooth scroll for anchors
